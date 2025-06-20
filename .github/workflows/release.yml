@@ -1,0 +1,45 @@
+name: Write version to file
+on:
+  release:
+    types:
+      - prereleased
+      - released
+permissions: {}
+jobs:
+  update_version_file:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Release tag
+        run: |
+          echo "Tag name from GITHUB_REF_NAME: $GITHUB_REF_NAME"
+          echo "Tag name from github.ref_name: ${{  github.ref_name }}"
+          echo "Tag name from github.event.release.tag_name: ${{  github.event.release.tag_name }}"
+
+      - name: Overwrite file
+        uses: "DamianReeves/write-file-action@master"
+        with:
+          path: ./version.txt
+          write-mode: overwrite
+          contents: ${{  github.event.release.tag_name }}
+
+      - name: Commit & Push
+        uses: Andro999b/push@v1.3
+        with:
+          github_token: ${{ secrets.SEB_GITHUB_TOKEN }}
+          branch: main
+          force: true
+          message: 'Write version to file'
+  notify_webhook:
+    # This job runs only for full releases
+    if: ${{ github.event.release.prerelease == false }}
+    needs: update_version_file
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Webhook
+        uses: dkershner6/post-api-call-action@v1
+        with:
+          url: ${{ secrets.WEBHOOK_URL }}
+          data: "{\"version\":\"${{ github.event.release.tag_name }}\"}"
