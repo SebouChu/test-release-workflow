@@ -1,3 +1,3 @@
 # Test Release Workflow
 
-v0.0.2
+v0.0.3
